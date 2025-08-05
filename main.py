@@ -9,6 +9,7 @@ app = FastAPI()
 MONGO_URI = os.environ.get("MONGO_URI")
 DATABASE_NAME = "sample_mflix"
 
+
 try:
   client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
   db = client[DATABASE_NAME]
