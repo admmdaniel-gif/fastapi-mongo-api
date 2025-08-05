@@ -29,6 +29,18 @@ def infer_schema(documents):
   # Convertimos los sets en listas
   return {field: list(types) for field, types in schema.items()}
 
+def get_sample_schema(collection_name, sample_size=10):
+    collection = db[collection_name]
+    sample_docs = list(collection.find().limit(sample_size))
+    field_types = {}
+
+    for doc in sample_docs:
+        for key, value in doc.items():
+            if key not in field_types:
+                field_types[key] = set()
+            field_types[key].add(type(value).__name__)
+
+    return {key: list(value_types) for key, value_types in field_types.items()}
 
 @app.get("/")
 def read_root():
