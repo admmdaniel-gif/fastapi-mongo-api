@@ -1,11 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from pymongo import MongoClient
 import uvicorn
+import os
 
 app = FastAPI()
 
 # Setup your connection string
-MONGO_URI = "mongodb+srv://admmdaniel:ADo3Vy93OGr4BVyP@dataclassydb.xhyoae2.mongodb.net/?retryWrites=true&w=majority&appName=DataClassyDB"
+MONGO_URI = os.environ.get("MONGO_URI")
 DATABASE_NAME = "sample_mflix"
 
 try:
