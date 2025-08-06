@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.openapi.utils import get_openapi
 from pymongo import MongoClient
 from pydantic import BaseModel
 from typing import List, Dict, Any
