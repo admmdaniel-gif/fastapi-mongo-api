@@ -7,7 +7,7 @@ import os
 
 app = FastAPI()
 
-# Setup your connection string
+# Setup MongoDB connection
 MONGO_URI = os.environ.get("MONGO_URI")
 DATABASE_NAME = "sample_mflix"
 
@@ -17,12 +17,13 @@ try:
 except Exception as e:
     raise RuntimeError(f"Error connecting with MongoDB: {e}")
 
+# Schema inference logic
 def infer_schema(documents):
     schema = {}
     for doc in documents:
         for key, value in doc.items():
             if key == "_id":
-                continue  # Ignoramos _id si quieres
+                continue
             value_type = type(value).__name__
             if key not in schema:
                 schema[key] = set()
@@ -40,9 +41,7 @@ def get_sample_schema(collection_name, sample_size=10):
             field_types[key].add(type(value).__name__)
     return {key: list(value_types) for key, value_types in field_types.items()}
 
-
-# Pydantic models for responses
-
+# Pydantic response models
 class RootResponse(BaseModel):
     message: str = Field(..., example="API working successfully")
 
@@ -104,13 +103,10 @@ class RelationshipInferResponse(BaseModel):
         ]
     )
 
-
 # Endpoints
-
 @app.get("/", response_model=RootResponse)
 def read_root():
     return {"message": "API working successfully"}
-
 
 @app.get("/collections", response_model=CollectionsResponse)
 def get_collections():
@@ -120,7 +116,6 @@ def get_collections():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/collections/{name}/count", response_model=CountResponse)
 def count_documents(name: str):
     try:
@@ -129,7 +124,6 @@ def count_documents(name: str):
         return {"collection": name, "count": count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get(
     "/collections/{name}/sample",
@@ -171,7 +165,6 @@ def sample_documents(name: str, limit: int = 5):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/schema-infer/{collection_name}", response_model=SchemaInferResponse)
 def schema_infer(collection_name: str, limit: int = 10):
     try:
@@ -187,7 +180,6 @@ def schema_infer(collection_name: str, limit: int = 10):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/relationship-infer", response_model=RelationshipInferResponse)
 def infer_relationships():
@@ -217,6 +209,41 @@ def infer_relationships():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Custom OpenAPI schema with version and server info
+from fastapi.openapi.utils import get_openapi
 
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title="MongoDB Dynamic API",
+        version="1.0.0",
+        description="An API that exposes collections and documents from MongoDB, with schema inference and relationship detection.",
+        routes=app.routes,
+    )
+
+    # Override OpenAPI version
+    openapi_schema["openapi"] = "3.0.0"
+
+    # Add server descriptions
+    openapi_schema["servers"] = [
+        {
+            "url": "https://<TU_DOMINIO>.onrender.com",
+            "description": "Production server"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local development server"
+        }
+    ]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+# Apply the custom OpenAPI schema
+app.openapi = custom_openapi
+
+# Run server
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
