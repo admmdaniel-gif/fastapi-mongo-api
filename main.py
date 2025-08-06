@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 import uvicorn
 import os
 
-app = FastAPI()
+app = FastAPI(openapi_version="3.0.0")
 
 # Setup your connection string
 MONGO_URI = os.environ.get("MONGO_URI")
